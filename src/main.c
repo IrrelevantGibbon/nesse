@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "utils.h"
-
+#include "cpu.h"
 
 int main(int argc, char* argv[]) {
     // Initialize SDL
