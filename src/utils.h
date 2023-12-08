@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
+#include <stdlib.h>
 #define DEBUG 1
 
 typedef enum {
@@ -42,3 +43,13 @@ void get_formatted_time(char *buffer)
         printf("[%s] [%s] : %s\n", logLevelToString(TYPE), time_buffer, MESSAGE); \
     } while(0)
 #endif
+
+
+void* safeMalloc(size_t size) {
+    void* ptr = malloc(size);
+    if (ptr == NULL) {
+        fprintf(stderr, "Memory allocation failed for size %zu.\n", size);
+        exit(EXIT_FAILURE);
+    }
+    return ptr;
+}
