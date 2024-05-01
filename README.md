@@ -1,2 +1,0 @@
-# nesse
-Simple NES emulator
