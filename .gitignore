@@ -80,3 +80,5 @@ Nesse
 build/*
 
 # End of https://www.toptal.com/developers/gitignore/api/kdevelop4,c,cmake
+
+test.bin
