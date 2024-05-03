@@ -1,5 +1,8 @@
 package nesse
 
+
+StatusRegister :: u8
+
 /*
     - pc  : program counter u16
     - sp  : stack pointer u8
@@ -11,7 +14,7 @@ package nesse
 Registers :: struct {
 	pc:  u16,
 	sp:  u8,
-	st:  u8,
+	st:  StatusRegister,
 	acc: u8,
 	x:   u8,
 	y:   u8,
@@ -35,6 +38,8 @@ Cpu :: struct {
 
 Opcode :: enum {
 	BRK = 0x0,
+	LDA = 0xA9,
+	TAX = 0xAA,
 }
 
 CPU_CYCLE :: 12 // TO DEFINE
@@ -58,17 +63,76 @@ execute :: proc(cpu: ^Cpu, memory: ^Memory, opcode: Opcode) {
 	switch opcode {
 	case Opcode.BRK:
 		BRK(cpu)
+	case Opcode.LDA:
+		LDA(cpu, memory)
+	case Opcode.TAX:
+		TAX(cpu)
 	}
 }
+
+/*
+    Status register functions
+*/
+
+
+/*
+    Set Break flag
+*/
+setB :: proc(st: ^StatusRegister, value: bool = false) {
+	switch value {
+	case true:
+		st^ |= 0x10
+	case false:
+		st^ &= 0xEF
+	}
+}
+
+/*
+    Set Zero flag
+*/
+setZ :: proc(st: ^StatusRegister, value: bool = false) {
+	switch value {
+	case true:
+		st^ |= 0x02
+	case false:
+		st^ &= 0xFD
+	}
+}
+
+/*
+    Set Negative flag
+*/
+setN :: proc(st: ^StatusRegister, value: bool = false) {
+	switch value {
+	case true:
+		st^ |= 0x80
+	case false:
+		st^ &= 0x7F
+	}
+}
+
+/*
+
+*/
 
 
 // Instructions
 
 /* Load / Store Operations  */
-LDA :: proc() {
-
+LDA :: proc(cpu: ^Cpu, memory: ^Memory) {
+	/* Refacto  2 next lines */
+	value := memory.memory[cpu.registers.pc]
+	cpu.registers.pc += 1
+	cpu.registers.acc = value
+	setZ(&cpu.registers.st, cpu.registers.acc == 0x0)
+	setN(&cpu.registers.st, cpu.registers.acc & 0x80 != 0x0)
 }
 /* Register Transfer Operations */
+TAX :: proc(cpu: ^Cpu) {
+	cpu.registers.x = cpu.registers.acc
+	setZ(&cpu.registers.st, cpu.registers.x == 0x0)
+	setN(&cpu.registers.st, cpu.registers.x & 0x80 != 0x0)
+}
 /* Stack Operations */
 /* Logical Operations */
 
@@ -94,5 +158,5 @@ ADC :: proc() {
 /* Status Register Operations */
 /* System Functions */
 BRK :: proc(cpu: ^Cpu) {
-	cpu.registers.st &= 0x11
+	setB(&cpu.registers.st, true)
 }
