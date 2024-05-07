@@ -92,15 +92,16 @@ TYA :: proc(cpu: ^Cpu) {
 /*
     AND - Logical AND
 */
-AND :: proc() {
-
+AND :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
+	address := getAddressingModeAddress(cpu, memory, mode)
+	value := readMemoryByte(memory, address)
+	cpu.registers.acc &= value
+	setZ(&cpu.registers.st, cpu.registers.acc == 0x0)
+	setN(&cpu.registers.st, cpu.registers.acc & 0x80 != 0x0)
 }
 
 /* Arithmetic Operations */
 
-/*
-    Add with Carry
-*/
 ADC :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
 	address := getAddressingModeAddress(cpu, memory, mode)
 	value := readMemoryByte(memory, address)
@@ -111,6 +112,23 @@ ADC :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
 	setC(&cpu.registers.st, getV(getST(cpu)))
 	setZ(&cpu.registers.st, cpu.registers.acc == 0x0)
 	setN(&cpu.registers.st, cpu.registers.acc & 0x80 != 0x0)
+}
+
+ASL :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
+	if mode == AddressingMode.Accumulator {
+		setC(&cpu.registers.st, bool(cpu.registers.acc & 0x80 >> 7))
+		cpu.registers.acc <<= 1
+		setZ(&cpu.registers.st, cpu.registers.acc == 0x0)
+		setN(&cpu.registers.st, cpu.registers.acc & 0x80 != 0x0)
+	} else {
+		address := getAddressingModeAddress(cpu, memory, mode)
+		value := readMemoryByte(memory, address)
+		setC(&cpu.registers.st, bool(value & 0x80 >> 7))
+		value <<= 1
+		writeMemoryByte(memory, address, value)
+		setZ(&cpu.registers.st, value == 0x0)
+		setN(&cpu.registers.st, value & 0x80 != 0x0)
+	}
 }
 
 /* Shifts */

@@ -22,6 +22,24 @@ Opcodes := map[u8]Opcode {
 	0x79 = Opcode{AddressingMode.AbsoluteY, 3, 4, ADC},
 	0x61 = Opcode{AddressingMode.IndexedIndirect, 2, 6, ADC},
 	0x71 = Opcode{AddressingMode.IndirectIndexed, 2, 5, ADC},
+
+	/* AND */
+	0x29 = Opcode{AddressingMode.Immediate, 2, 2, AND},
+	0x25 = Opcode{AddressingMode.ZeroPage, 2, 3, AND},
+	0x35 = Opcode{AddressingMode.ZeroPageX, 2, 4, AND},
+	0x2D = Opcode{AddressingMode.Absolute, 3, 4, AND},
+	0x3D = Opcode{AddressingMode.AbsoluteX, 3, 4, AND},
+	0x39 = Opcode{AddressingMode.AbsoluteY, 3, 4, AND},
+	0x21 = Opcode{AddressingMode.IndexedIndirect, 2, 6, AND},
+	0x31 = Opcode{AddressingMode.IndirectIndexed, 2, 5, AND},
+
+	/* ASL */
+	0x0A = Opcode{AddressingMode.Accumulator, 1, 2, ASL},
+	0x06 = Opcode{AddressingMode.ZeroPage, 2, 5, ASL},
+	0x16 = Opcode{AddressingMode.ZeroPageX, 2, 6, ASL},
+	0x0E = Opcode{AddressingMode.Absolute, 3, 6, ASL},
+	0x1E = Opcode{AddressingMode.AbsoluteX, 3, 7, ASL},
+
 	/* LDA */
 	0xA9 = Opcode{AddressingMode.Immediate, 2, 2, LDA},
 	0xA5 = Opcode{AddressingMode.ZeroPage, 2, 3, LDA},
@@ -31,7 +49,6 @@ Opcodes := map[u8]Opcode {
 	0xB9 = Opcode{AddressingMode.AbsoluteY, 3, 4, LDA},
 	0xA1 = Opcode{AddressingMode.IndexedIndirect, 2, 6, LDA},
 	0xB1 = Opcode{AddressingMode.IndirectIndexed, 2, 5, LDA},
-
 
 	/* LDX */
 	0xA2 = Opcode{AddressingMode.Immediate, 2, 2, LDX},

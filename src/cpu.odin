@@ -47,6 +47,7 @@ Cpu :: struct {
 
 AddressingMode :: enum {
 	Implied,
+	Accumulator,
 	Immediate,
 	ZeroPage,
 	ZeroPageX,
@@ -218,7 +219,7 @@ getAddressingModeAddress :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMod
 			location = location + Word(getY(cpu))
 			return location
 		}
-	case AddressingMode.Implied:
+	case AddressingMode.Implied, AddressingMode.Accumulator:
 		{}
 	}
 	return 0
