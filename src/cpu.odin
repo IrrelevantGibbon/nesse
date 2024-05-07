@@ -234,39 +234,57 @@ LDY :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
 	setN(&cpu.registers.st, cpu.registers.y & 0x80 != 0x0)
 }
 
+STA :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
+
+}
+
+STX :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
+
+}
+
+STY :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
+
+}
+
 /* Register Transfer Operations */
 TAX :: proc(cpu: ^Cpu) {
 	cpu.registers.x = cpu.registers.acc
 	setZ(&cpu.registers.st, cpu.registers.x == 0x0)
 	setN(&cpu.registers.st, cpu.registers.x & 0x80 != 0x0)
+	cpu.registers.pc += 1
 }
 
 TAY :: proc(cpu: ^Cpu) {
 	cpu.registers.y = cpu.registers.acc
 	setZ(&cpu.registers.st, cpu.registers.y == 0x0)
 	setN(&cpu.registers.st, cpu.registers.y & 0x80 != 0x0)
+	cpu.registers.pc += 1
 }
 
 TSX :: proc(cpu: ^Cpu) {
 	cpu.registers.x = cpu.registers.sp
 	setZ(&cpu.registers.st, cpu.registers.x == 0x0)
 	setN(&cpu.registers.st, cpu.registers.x & 0x80 != 0x0)
+	cpu.registers.pc += 1
 }
 
 TXA :: proc(cpu: ^Cpu) {
 	cpu.registers.acc = cpu.registers.x
 	setZ(&cpu.registers.st, cpu.registers.acc == 0x0)
 	setN(&cpu.registers.st, cpu.registers.acc & 0x80 != 0x0)
+	cpu.registers.pc += 1
 }
 
 TXS :: proc(cpu: ^Cpu) {
 	cpu.registers.sp = cpu.registers.x
+	cpu.registers.pc += 1
 }
 
 TYA :: proc(cpu: ^Cpu) {
 	cpu.registers.acc = cpu.registers.y
 	setZ(&cpu.registers.st, cpu.registers.acc == 0x0)
 	setN(&cpu.registers.st, cpu.registers.acc & 0x80 != 0x0)
+	cpu.registers.pc += 1
 }
 /* Stack Operations */
 /* Logical Operations */
@@ -296,19 +314,23 @@ ADC :: proc() {
 
 SEC :: proc(cpu: ^Cpu) {
 	setC(&cpu.registers.st, true)
+	cpu.registers.pc += 1
 }
 
 SED :: proc(cpu: ^Cpu) {
 	setD(&cpu.registers.st, true)
+	cpu.registers.pc += 1
 }
 
 SEI :: proc(cpu: ^Cpu) {
 	setI(&cpu.registers.st, true)
+	cpu.registers.pc += 1
 }
 
 /* System Functions */
 BRK :: proc(cpu: ^Cpu) {
 	setB(&cpu.registers.st, true)
+	cpu.registers.pc += 1
 }
 
 
