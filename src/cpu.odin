@@ -100,6 +100,12 @@ opcodes := map[u8]Opcode {
 	0x9A = Opcode{AddressingMode.Implied, 1, 2, TXS},
 	/* TYA */
 	0x98 = Opcode{AddressingMode.Implied, 1, 2, TYA},
+	/* SEC */
+	0x38 = Opcode{AddressingMode.Implied, 1, 2, SEC},
+	/* SED */
+	0xF8 = Opcode{AddressingMode.Implied, 1, 2, SED},
+	/* SEI */
+	0x78 = Opcode{AddressingMode.Implied, 1, 2, SEI},
 }
 
 CPU_CYCLE :: 12 // TO DEFINE
@@ -131,6 +137,35 @@ execute :: proc(cpu: ^Cpu, memory: ^Memory, opcode: Opcode) {
 /*
     Set Break flag
 */
+
+setC :: proc(st: ^StatusRegister, value: bool = false) {
+	switch value {
+	case true:
+		st^ |= 0x80
+	case false:
+		st^ &= 0x7F
+	}
+}
+
+setD :: proc(st: ^StatusRegister, value: bool = false) {
+	switch value {
+	case true:
+		st^ |= 0x08
+	case false:
+		st^ &= 0xF7
+	}
+}
+
+setI :: proc(st: ^StatusRegister, value: bool = false) {
+	switch value {
+	case true:
+		st^ |= 0x04
+	case false:
+		st^ &= 0xFB
+	}
+}
+
+
 setB :: proc(st: ^StatusRegister, value: bool = false) {
 	switch value {
 	case true:
@@ -258,6 +293,19 @@ ADC :: proc() {
 /* Jumps / Calls */
 /* Branches */
 /* Status Register Operations */
+
+SEC :: proc(cpu: ^Cpu) {
+	setC(&cpu.registers.st, true)
+}
+
+SED :: proc(cpu: ^Cpu) {
+	setD(&cpu.registers.st, true)
+}
+
+SEI :: proc(cpu: ^Cpu) {
+	setI(&cpu.registers.st, true)
+}
+
 /* System Functions */
 BRK :: proc(cpu: ^Cpu) {
 	setB(&cpu.registers.st, true)
