@@ -106,6 +106,22 @@ opcodes := map[u8]Opcode {
 	0xF8 = Opcode{AddressingMode.Implied, 1, 2, SED},
 	/* SEI */
 	0x78 = Opcode{AddressingMode.Implied, 1, 2, SEI},
+	/* STA */
+	0x85 = Opcode{AddressingMode.ZeroPage, 2, 3, STA},
+	0x95 = Opcode{AddressingMode.ZeroPageX, 2, 4, STA},
+	0x8D = Opcode{AddressingMode.Absolute, 2, 4, STA},
+	0x9D = Opcode{AddressingMode.AbsoluteX, 2, 5, STA},
+	0x99 = Opcode{AddressingMode.AbsoluteY, 2, 5, STA},
+	0x81 = Opcode{AddressingMode.IndexedIndirect, 2, 6, STA},
+	0x91 = Opcode{AddressingMode.IndirectIndexed, 2, 6, STA},
+	/* STX */
+	0x86 = Opcode{AddressingMode.ZeroPage, 2, 3, STX},
+	0x96 = Opcode{AddressingMode.ZeroPageY, 2, 4, STX},
+	0x8E = Opcode{AddressingMode.Absolute, 3, 4, STX},
+	/* STY */
+	0x84 = Opcode{AddressingMode.ZeroPage, 2, 3, STY},
+	0x94 = Opcode{AddressingMode.ZeroPageX, 2, 4, STY},
+	0x8c = Opcode{AddressingMode.Absolute, 3, 4, STY},
 }
 
 CPU_CYCLE :: 12 // TO DEFINE
@@ -235,15 +251,18 @@ LDY :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
 }
 
 STA :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
-
+	address := getAddressingModeAddress(cpu, memory, mode)
+	writeMemoryByte(memory, address, cpu.registers.acc)
 }
 
 STX :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
-
+	address := getAddressingModeAddress(cpu, memory, mode)
+	writeMemoryByte(memory, address, cpu.registers.x)
 }
 
 STY :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
-
+	address := getAddressingModeAddress(cpu, memory, mode)
+	writeMemoryByte(memory, address, cpu.registers.y)
 }
 
 /* Register Transfer Operations */
@@ -369,7 +388,7 @@ getAddressingModeAddress :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMod
 	/*
 	        3 bytes -> Opcode Byte1 Byte2
 			example : JMP ($FFFC)
-	    */
+	*/
 	case AddressingMode.Indirect:
 		{
 			base :=
@@ -383,7 +402,7 @@ getAddressingModeAddress :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMod
 	/*
 	       2 bytes -> Opcode Byte1, X
 		   example : LDA ($40,X)
-					*/
+	*/
 	case AddressingMode.IndexedIndirect:
 		{
 			location := Word(readMemoryByte(memory, cpu.registers.pc)) + Word(cpu.registers.x)
