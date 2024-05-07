@@ -144,6 +144,10 @@ setV :: proc(st: ^StatusRegister, condition: bool = false) {
 	st.overflow = condition
 }
 
+getV :: proc(st: StatusRegister) -> bool {
+	return st.overflow
+}
+
 getAddressingModeAddress :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) -> Word {
 	switch mode {
 	case AddressingMode.Immediate:

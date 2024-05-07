@@ -106,7 +106,9 @@ ADC :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
 	value := readMemoryByte(memory, address)
 	old_acc := cpu.registers.acc
 	cpu.registers.acc = cpu.registers.acc + value + u8(cpu.registers.st.carry)
-	setC(&cpu.registers.st, old_acc > cpu.registers.acc)
+	is_overflow := old_acc > cpu.registers.acc
+	setV(&cpu.registers.st, is_overflow)
+	setC(&cpu.registers.st, getV(getST(cpu)))
 	setZ(&cpu.registers.st, cpu.registers.acc == 0x0)
 	setN(&cpu.registers.st, cpu.registers.acc & 0x80 != 0x0)
 }

@@ -13,6 +13,15 @@ Opcode :: struct {
 
 Opcodes := map[u8]Opcode {
 
+	/* ADC */
+	0x69 = Opcode{AddressingMode.Immediate, 2, 2, ADC},
+	0x65 = Opcode{AddressingMode.ZeroPage, 2, 3, ADC},
+	0x75 = Opcode{AddressingMode.ZeroPageX, 2, 4, ADC},
+	0x6D = Opcode{AddressingMode.Absolute, 3, 4, ADC},
+	0x7D = Opcode{AddressingMode.AbsoluteX, 3, 4, ADC},
+	0x79 = Opcode{AddressingMode.AbsoluteY, 3, 4, ADC},
+	0x61 = Opcode{AddressingMode.IndexedIndirect, 2, 6, ADC},
+	0x71 = Opcode{AddressingMode.IndirectIndexed, 2, 5, ADC},
 	/* LDA */
 	0xA9 = Opcode{AddressingMode.Immediate, 2, 2, LDA},
 	0xA5 = Opcode{AddressingMode.ZeroPage, 2, 3, LDA},
