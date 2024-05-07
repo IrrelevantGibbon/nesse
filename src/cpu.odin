@@ -77,28 +77,44 @@ initCpu :: proc() -> Cpu {
 }
 
 emulateCycle :: proc(cpu: ^Cpu, memory: ^Memory) {
-	execute(cpu, memory, fetch(cpu, memory))
+	opcode := fetch(cpu, memory)
+	setPC(cpu, getPC(cpu) + 1)
+	execute(cpu, memory, opcode)
+
 }
 
 fetch :: proc(cpu: ^Cpu, memory: ^Memory) -> Opcode {
-	cpu := cpu
-	opcode := memory.memory[cpu.registers.pc]
-	cpu.registers.pc += 1
-	return Opcodes[opcode]
+	return Opcodes[readMemoryByte(memory, getPC(cpu))]
 }
 
 execute :: proc(cpu: ^Cpu, memory: ^Memory, opcode: Opcode) {
 	// Opcodes.func(cpu, memory, opcode.addrMode)
 }
 
-/*
-    Status register functions
-*/
 
+getX :: proc(cpu: ^Cpu) -> u8 {
+	return cpu.registers.x
+}
 
-/*
-    Set Break flag
-*/
+getY :: proc(cpu: ^Cpu) -> u8 {
+	return cpu.registers.y
+}
+
+getPC :: proc(cpu: ^Cpu) -> u16 {
+	return cpu.registers.pc
+}
+
+getACC :: proc(cpu: ^Cpu) -> u8 {
+	return cpu.registers.acc
+}
+
+getST :: proc(cpu: ^Cpu) -> StatusRegister {
+	return cpu.registers.st
+}
+
+setPC :: proc(cpu: ^Cpu, val: u16) {
+	cpu.registers.pc = val
+}
 
 setC :: proc(st: ^StatusRegister, condition: bool = false) {
 	st.carry = condition
@@ -112,7 +128,6 @@ setI :: proc(st: ^StatusRegister, condition: bool = false) {
 	st.interrupt = condition
 }
 
-
 setB :: proc(st: ^StatusRegister, condition: bool = false) {
 	st.break_ = condition
 }
@@ -125,18 +140,21 @@ setN :: proc(st: ^StatusRegister, condition: bool = false) {
 	st.negative = condition
 }
 
+setV :: proc(st: ^StatusRegister, condition: bool = false) {
+	st.overflow = condition
+}
 
 getAddressingModeAddress :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) -> Word {
 	switch mode {
 	case AddressingMode.Immediate:
-		return cpu.registers.pc
+		return getPC(cpu)
 	case AddressingMode.ZeroPage:
-		return Word(readMemoryByte(memory, cpu.registers.pc))
+		return Word(readMemoryByte(memory, getPC(cpu)))
 	case AddressingMode.Absolute:
-		return readMemoryWord(memory, cpu.registers.pc)
+		return readMemoryWord(memory, getPC(cpu))
 	case AddressingMode.ZeroPageX:
 		{
-			location := Word(readMemoryByte(memory, cpu.registers.pc)) + Word(cpu.registers.x)
+			location := Word(readMemoryByte(memory, getPC(cpu))) + Word(getX(cpu))
 			if location > 0xFF {
 				// Page Crossed Cycle + 1
 			}
@@ -144,7 +162,7 @@ getAddressingModeAddress :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMod
 		}
 	case AddressingMode.ZeroPageY:
 		{
-			location := Word(readMemoryByte(memory, cpu.registers.pc)) + Word(cpu.registers.y)
+			location := Word(readMemoryByte(memory, getPC(cpu))) + Word(getY(cpu))
 			if location > 0xFF {
 				// Page Crossed Cycle + 1
 			}
@@ -152,11 +170,11 @@ getAddressingModeAddress :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMod
 		}
 	case AddressingMode.AbsoluteX:
 		{
-			return readMemoryWord(memory, cpu.registers.pc) + Word(cpu.registers.x)
+			return readMemoryWord(memory, getPC(cpu)) + Word(getX(cpu))
 		}
 	case AddressingMode.AbsoluteY:
 		{
-			return readMemoryWord(memory, cpu.registers.pc) + Word(cpu.registers.y)
+			return readMemoryWord(memory, getPC(cpu)) + Word(getY(cpu))
 		}
 	/*
 	        3 bytes -> Opcode Byte1 Byte2
@@ -165,8 +183,8 @@ getAddressingModeAddress :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMod
 	case AddressingMode.Indirect:
 		{
 			base :=
-				Word(readMemoryByte(memory, cpu.registers.pc + 1)) << 8 |
-				Word(readMemoryByte(memory, cpu.registers.pc))
+				Word(readMemoryByte(memory, getPC(cpu) + 1)) << 8 |
+				Word(readMemoryByte(memory, getPC(cpu)))
 			location :=
 				Word(readMemoryByte(memory, base + 1)) << 8 | Word(readMemoryByte(memory, base))
 			location = location + 1 if location & 0xFF == 0xFF else location
@@ -178,7 +196,7 @@ getAddressingModeAddress :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMod
 	*/
 	case AddressingMode.IndexedIndirect:
 		{
-			location := Word(readMemoryByte(memory, cpu.registers.pc)) + Word(cpu.registers.x)
+			location := Word(readMemoryByte(memory, getPC(cpu))) + Word(getX(cpu))
 			location =
 				Word(readMemoryByte(memory, location)) >> 8 |
 				Word(readMemoryByte(memory, location + 1))
@@ -190,10 +208,10 @@ getAddressingModeAddress :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMod
 	 */
 	case AddressingMode.IndirectIndexed:
 		{
-			base := Word(readMemoryByte(memory, cpu.registers.pc))
+			base := Word(readMemoryByte(memory, getPC(cpu)))
 			location :=
 				Word(readMemoryByte(memory, base + 1)) >> 8 | Word(readMemoryByte(memory, base))
-			location = location + Word(cpu.registers.y)
+			location = location + Word(getY(cpu))
 			return location
 		}
 	case AddressingMode.Implied:
