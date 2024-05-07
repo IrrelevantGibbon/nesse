@@ -36,10 +36,53 @@ Cpu :: struct {
 	interupts: Interupts,
 }
 
-Opcode :: enum {
-	BRK = 0x0,
-	LDA = 0xA9,
-	TAX = 0xAA,
+
+AddressingMode :: enum {
+	Immediate,
+	ZeroPage,
+	ZeroPageX,
+	ZeroPageY,
+	Absolute,
+	AbsoluteX,
+	AbsoluteY,
+	Indirect,
+	IndexedIndirect,
+	IndirectIndexed,
+}
+
+Opcode :: struct {
+	addrMode: AddressingMode,
+	bytes:    u8,
+	cycles:   u8,
+	func:     proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode),
+}
+
+opcodes := map[u8]Opcode {
+
+	/* LDA */
+	0xA9 = Opcode{AddressingMode.Immediate, 2, 2, LDA},
+	0xA5 = Opcode{AddressingMode.ZeroPage, 2, 3, LDA},
+	0xB5 = Opcode{AddressingMode.ZeroPageX, 2, 4, LDA},
+	0xAD = Opcode{AddressingMode.Absolute, 3, 4, LDA},
+	0xBD = Opcode{AddressingMode.AbsoluteX, 3, 4, LDA},
+	0xB9 = Opcode{AddressingMode.AbsoluteY, 3, 4, LDA},
+	0xA1 = Opcode{AddressingMode.IndexedIndirect, 2, 6, LDA},
+	0xB1 = Opcode{AddressingMode.IndirectIndexed, 2, 5, LDA},
+
+
+	/* LDX */
+	0xA2 = Opcode{AddressingMode.Immediate, 2, 2, LDX},
+	0xA6 = Opcode{AddressingMode.ZeroPage, 2, 3, LDX},
+	0xB6 = Opcode{AddressingMode.ZeroPageY, 2, 4, LDX},
+	0xAE = Opcode{AddressingMode.Absolute, 3, 4, LDX},
+	0xBE = Opcode{AddressingMode.AbsoluteY, 3, 4, LDX},
+
+	/* LDY */
+	0xA0 = Opcode{AddressingMode.Immediate, 2, 2, LDY},
+	0xA4 = Opcode{AddressingMode.ZeroPage, 2, 3, LDY},
+	0xB4 = Opcode{AddressingMode.ZeroPageX, 2, 4, LDY},
+	0xAC = Opcode{AddressingMode.Absolute, 3, 4, LDY},
+	0xBC = Opcode{AddressingMode.AbsoluteX, 3, 4, LDY},
 }
 
 CPU_CYCLE :: 12 // TO DEFINE
@@ -56,18 +99,11 @@ fetch :: proc(cpu: ^Cpu, memory: ^Memory) -> Opcode {
 	cpu := cpu
 	opcode := memory.memory[cpu.registers.pc]
 	cpu.registers.pc += 1
-	return Opcode(opcode)
+	return opcodes[opcode]
 }
 
 execute :: proc(cpu: ^Cpu, memory: ^Memory, opcode: Opcode) {
-	switch opcode {
-	case Opcode.BRK:
-		BRK(cpu)
-	case Opcode.LDA:
-		LDA(cpu, memory)
-	case Opcode.TAX:
-		TAX(cpu)
-	}
+	opcode.func(cpu, memory, opcode.addrMode)
 }
 
 /*
@@ -119,14 +155,33 @@ setN :: proc(st: ^StatusRegister, value: bool = false) {
 // Instructions
 
 /* Load / Store Operations  */
-LDA :: proc(cpu: ^Cpu, memory: ^Memory) {
-	/* Refacto  2 next lines */
-	value := memory.memory[cpu.registers.pc]
+LDA :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
+	address := getAddressingModeAddress(cpu, memory, mode)
+	value := readMemoryByte(memory, address)
 	cpu.registers.pc += 1
 	cpu.registers.acc = value
 	setZ(&cpu.registers.st, cpu.registers.acc == 0x0)
 	setN(&cpu.registers.st, cpu.registers.acc & 0x80 != 0x0)
 }
+
+LDX :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
+	address := getAddressingModeAddress(cpu, memory, mode)
+	value := readMemoryByte(memory, address)
+	cpu.registers.pc += 1
+	cpu.registers.x = value
+	setZ(&cpu.registers.st, cpu.registers.x == 0x0)
+	setN(&cpu.registers.st, cpu.registers.x & 0x80 != 0x0)
+}
+
+LDY :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) {
+	address := getAddressingModeAddress(cpu, memory, mode)
+	value := readMemoryByte(memory, address)
+	cpu.registers.pc += 1
+	cpu.registers.y = value
+	setZ(&cpu.registers.st, cpu.registers.y == 0x0)
+	setN(&cpu.registers.st, cpu.registers.y & 0x80 != 0x0)
+}
+
 /* Register Transfer Operations */
 TAX :: proc(cpu: ^Cpu) {
 	cpu.registers.x = cpu.registers.acc
@@ -159,4 +214,79 @@ ADC :: proc() {
 /* System Functions */
 BRK :: proc(cpu: ^Cpu) {
 	setB(&cpu.registers.st, true)
+}
+
+
+getAddressingModeAddress :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode) -> Word {
+	switch mode {
+	case AddressingMode.Immediate:
+		return cpu.registers.pc
+	case AddressingMode.ZeroPage:
+		return Word(readMemoryByte(memory, cpu.registers.pc))
+	case AddressingMode.Absolute:
+		return readMemoryWord(memory, cpu.registers.pc)
+	case AddressingMode.ZeroPageX:
+		{
+			location := Word(readMemoryByte(memory, cpu.registers.pc)) + Word(cpu.registers.x)
+			if location > 0xFF {
+				// Page Crossed Cycle + 1
+			}
+			return location
+		}
+	case AddressingMode.ZeroPageY:
+		{
+			location := Word(readMemoryByte(memory, cpu.registers.pc)) + Word(cpu.registers.y)
+			if location > 0xFF {
+				// Page Crossed Cycle + 1
+			}
+			return location
+		}
+	case AddressingMode.AbsoluteX:
+		{
+			return readMemoryWord(memory, cpu.registers.pc) + Word(cpu.registers.x)
+		}
+	case AddressingMode.AbsoluteY:
+		{
+			return readMemoryWord(memory, cpu.registers.pc) + Word(cpu.registers.y)
+		}
+	/*
+	        3 bytes -> Opcode Byte1 Byte2
+			example : JMP ($FFFC)
+	    */
+	case AddressingMode.Indirect:
+		{
+			base :=
+				Word(readMemoryByte(memory, cpu.registers.pc + 1)) << 8 |
+				Word(readMemoryByte(memory, cpu.registers.pc))
+			location :=
+				Word(readMemoryByte(memory, base + 1)) << 8 | Word(readMemoryByte(memory, base))
+			location = location + 1 if location & 0xFF == 0xFF else location
+			return location
+		}
+	/*
+	       2 bytes -> Opcode Byte1, X
+		   example : LDA ($40,X)
+					*/
+	case AddressingMode.IndexedIndirect:
+		{
+			location := Word(readMemoryByte(memory, cpu.registers.pc)) + Word(cpu.registers.x)
+			location =
+				Word(readMemoryByte(memory, location)) >> 8 |
+				Word(readMemoryByte(memory, location + 1))
+			return location
+		}
+	/*
+		2 bytes -> Opcode Byte1, y
+		example : LDA ($40,X)
+	 */
+	case AddressingMode.IndirectIndexed:
+		{
+			base := Word(readMemoryByte(memory, cpu.registers.pc))
+			location :=
+				Word(readMemoryByte(memory, base + 1)) >> 8 | Word(readMemoryByte(memory, base))
+			location = location + Word(cpu.registers.y)
+			return location
+		}
+	}
+	return 0
 }
