@@ -38,6 +38,7 @@ Cpu :: struct {
 
 
 AddressingMode :: enum {
+	Implied,
 	Immediate,
 	ZeroPage,
 	ZeroPageX,
@@ -54,7 +55,10 @@ Opcode :: struct {
 	addrMode: AddressingMode,
 	bytes:    u8,
 	cycles:   u8,
-	func:     proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode),
+	func:     union {
+		proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMode),
+		proc(cpu: ^Cpu),
+	},
 }
 
 opcodes := map[u8]Opcode {
@@ -83,6 +87,19 @@ opcodes := map[u8]Opcode {
 	0xB4 = Opcode{AddressingMode.ZeroPageX, 2, 4, LDY},
 	0xAC = Opcode{AddressingMode.Absolute, 3, 4, LDY},
 	0xBC = Opcode{AddressingMode.AbsoluteX, 3, 4, LDY},
+
+	/* TAX */
+	0xAA = Opcode{AddressingMode.Implied, 1, 2, TAX},
+	/* TAY */
+	0xA8 = Opcode{AddressingMode.Implied, 1, 2, TAY},
+	/* TSX */
+	0xBA = Opcode{AddressingMode.Implied, 1, 2, TSX},
+	/* TXA */
+	0x8A = Opcode{AddressingMode.Implied, 1, 2, TXA},
+	/* TXS */
+	0x9A = Opcode{AddressingMode.Implied, 1, 2, TXS},
+	/* TYA */
+	0x98 = Opcode{AddressingMode.Implied, 1, 2, TYA},
 }
 
 CPU_CYCLE :: 12 // TO DEFINE
@@ -188,8 +205,38 @@ TAX :: proc(cpu: ^Cpu) {
 	setZ(&cpu.registers.st, cpu.registers.x == 0x0)
 	setN(&cpu.registers.st, cpu.registers.x & 0x80 != 0x0)
 }
+
+TAY :: proc(cpu: ^Cpu) {
+	cpu.registers.y = cpu.registers.acc
+	setZ(&cpu.registers.st, cpu.registers.y == 0x0)
+	setN(&cpu.registers.st, cpu.registers.y & 0x80 != 0x0)
+}
+
+TSX :: proc(cpu: ^Cpu) {
+	cpu.registers.x = cpu.registers.sp
+	setZ(&cpu.registers.st, cpu.registers.x == 0x0)
+	setN(&cpu.registers.st, cpu.registers.x & 0x80 != 0x0)
+}
+
+TXA :: proc(cpu: ^Cpu) {
+	cpu.registers.acc = cpu.registers.x
+	setZ(&cpu.registers.st, cpu.registers.acc == 0x0)
+	setN(&cpu.registers.st, cpu.registers.acc & 0x80 != 0x0)
+}
+
+TXS :: proc(cpu: ^Cpu) {
+	cpu.registers.sp = cpu.registers.x
+}
+
+TYA :: proc(cpu: ^Cpu) {
+	cpu.registers.acc = cpu.registers.y
+	setZ(&cpu.registers.st, cpu.registers.acc == 0x0)
+	setN(&cpu.registers.st, cpu.registers.acc & 0x80 != 0x0)
+}
 /* Stack Operations */
 /* Logical Operations */
+
+// LSR :: proc(cpu: ^Cpu, memory)
 
 /*
     AND - Logical AND
@@ -287,6 +334,8 @@ getAddressingModeAddress :: proc(cpu: ^Cpu, memory: ^Memory, mode: AddressingMod
 			location = location + Word(cpu.registers.y)
 			return location
 		}
+	case AddressingMode.Implied:
+		{}
 	}
 	return 0
 }
